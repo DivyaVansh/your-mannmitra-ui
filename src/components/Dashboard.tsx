@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   MessageCircle, 
   Heart, 
@@ -12,18 +12,49 @@ import {
   Moon,
   Cloud,
   CloudRain,
-  Zap
+  Zap,
+  LogOut,
+  Languages
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardProps {
   onNavigate: (screen: string) => void;
 }
 
 const Dashboard = ({ onNavigate }: DashboardProps) => {
-  const [userName] = useState("Student"); // In real app, get from auth
+  const { translate, toggleLanguage } = useTranslation();
+  const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [user?.id]);
+
+  const fetchUserProfile = async () => {
+    if (!user?.id) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!error && data) {
+      setUserProfile(data);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   const dailyAffirmations = [
     "आपकी मानसिक शांति आपकी सबसे बड़ी शक्ति है। (Your mental peace is your greatest strength.)",
@@ -38,64 +69,64 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
   const quickActions = [
     {
       id: 'chatbot',
-      title: 'AI Companion',
-      description: 'Chat with your wellness buddy',
+      title: translate('features.aiCompanion'),
+      description: translate('features.aiCompanionDesc'),
       icon: MessageCircle,
       color: 'primary',
       urgent: false
     },
     {
       id: 'mood-tracker',
-      title: 'Mood Check-in',
-      description: 'How are you feeling today?',
+      title: translate('features.moodTracker'),
+      description: translate('features.moodTrackerDesc'),
       icon: Heart,
       color: 'secondary',
       urgent: true
     },
     {
       id: 'wellness-hub',
-      title: 'Wellness Hub',
-      description: 'Guided meditations & videos',
+      title: translate('features.wellnessHub'),
+      description: translate('features.wellnessHubDesc'),
       icon: Sparkles,
       color: 'accent',
       urgent: false
     },
     {
       id: 'counselor',
-      title: 'Book Counselor',
-      description: 'Professional support available',
+      title: translate('features.bookCounselor'),
+      description: translate('features.bookCounselorDesc'),
       icon: Calendar,
       color: 'primary',
       urgent: false
     },
     {
       id: 'peer-forum',
-      title: 'Peer Support',
-      description: 'Anonymous community chat',
+      title: translate('features.peerSupport'),
+      description: translate('features.peerSupportDesc'),
       icon: Users,
       color: 'secondary',
       urgent: false
     },
     {
       id: 'journal',
-      title: 'Daily Journal',
-      description: 'Reflect and express yourself',
+      title: translate('features.dailyJournal'),
+      description: translate('features.dailyJournalDesc'),
       icon: BookOpen,
       color: 'accent',
       urgent: false
     },
     {
       id: 'progress',
-      title: 'My Progress',
-      description: 'Track your wellness journey',
+      title: translate('features.myProgress'),
+      description: translate('features.myProgressDesc'),
       icon: TrendingUp,
       color: 'primary',
       urgent: false
     },
     {
       id: 'games',
-      title: 'Mindful Games',
-      description: 'Relaxing interactive activities',
+      title: translate('features.mindfulGames'),
+      description: translate('features.mindfulGamesDesc'),
       icon: Gamepad2,
       color: 'secondary',
       urgent: false
@@ -118,14 +149,27 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Good morning, {userName}! 🌅
+                {translate('dashboard.goodMorning')}, {userProfile?.full_name || 'Friend'}! 🌅
               </h1>
-              <p className="text-muted-foreground">नमस्ते! How can we support you today?</p>
+              <p className="text-muted-foreground">{translate('dashboard.namaste')}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Badge variant="secondary" className="gradient-wellness">
-                Streak: 7 days 🔥
+                {translate('dashboard.streak')}
               </Badge>
+              <Button variant="outline" size="icon" onClick={toggleLanguage}>
+                <Languages className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleSignOut}>
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -150,7 +194,7 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-primary" />
-              Quick Mood Check
+              {translate('dashboard.quickMood')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -204,16 +248,16 @@ const Dashboard = ({ onNavigate }: DashboardProps) => {
         {/* Emergency Help */}
         <Card className="bg-gradient-to-r from-primary/10 to-primary-light/10 border-primary/20 slide-in" style={{ animationDelay: '0.8s' }}>
           <CardContent className="p-6 text-center">
-            <h3 className="font-semibold text-foreground mb-2">Need Immediate Support?</h3>
+            <h3 className="font-semibold text-foreground mb-2">{translate('dashboard.emergency')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              India's National Mental Health Helpline is available 24/7
+              {translate('dashboard.helpline')}
             </p>
             <Button 
               variant="outline" 
               size="lg"
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
-              Call KIRAN: 1800-599-0019
+              {translate('dashboard.kiranCall')}
             </Button>
           </CardContent>
         </Card>

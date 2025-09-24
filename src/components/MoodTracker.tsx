@@ -1,214 +1,224 @@
-import { useState } from "react";
-import { ArrowLeft, Sun, Zap, Cloud, CloudRain, Moon, Calendar, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Sun, Zap, Cloud, CloudRain, Moon, Calendar } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface MoodTrackerProps {
   onBack: () => void;
 }
 
 const MoodTracker = ({ onBack }: MoodTrackerProps) => {
+  const { translate } = useTranslation();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [todayEntry, setTodayEntry] = useState<any>(null);
 
-  const moods = [
+  useEffect(() => {
+    fetchTodayEntry();
+  }, [user?.id]);
+
+  const fetchTodayEntry = async () => {
+    if (!user?.id) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('mood_entries')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single();
+
+    if (!error && data) {
+      setTodayEntry(data);
+      setSelectedMood(data.mood_type);
+      setNotes(data.notes || '');
+    }
+  };
+
+  const moodOptions = [
     {
       id: 'great',
-      label: 'Great',
+      label: 'Great / बहुत अच्छा',
       icon: Sun,
-      color: 'mood-great',
-      description: 'Feeling amazing and energetic!',
-      tips: ['Keep up the great energy!', 'Share your joy with others', 'Document what made today special']
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
+      description: 'Feeling amazing and energetic! / अद्भुत और ऊर्जावान महसूस कर रहे हैं!',
+      level: 5
     },
     {
       id: 'good',
-      label: 'Good',
+      label: 'Good / अच्छा',
       icon: Zap,
-      color: 'mood-good',
-      description: 'Pretty good overall',
-      tips: ['Maintain this positive momentum', 'Try a gratitude practice', 'Connect with a friend']
+      color: 'text-green-500',
+      bgColor: 'bg-green-100 dark:bg-green-900/20',
+      description: 'Having a positive day / सकारात्मक दिन बिता रहे हैं',
+      level: 4
     },
     {
       id: 'okay',
-      label: 'Okay',
+      label: 'Okay / ठीक',
       icon: Cloud,
-      color: 'mood-okay',
-      description: 'Neutral, neither good nor bad',
-      tips: ['Take a mindful walk', 'Listen to calming music', 'Practice deep breathing']
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-100 dark:bg-blue-900/20',
+      description: 'Feeling neutral or balanced / तटस्थ या संतुलित महसूस कर रहे हैं',
+      level: 3
     },
     {
       id: 'low',
-      label: 'Low',
+      label: 'Low / उदास',
       icon: CloudRain,
-      color: 'mood-low',
-      description: 'Not feeling my best',
-      tips: ['Be gentle with yourself', 'Try a 5-minute meditation', 'Reach out to someone you trust']
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-100 dark:bg-orange-900/20',
+      description: 'Feeling a bit down today / आज थोड़ा उदास महसूस कर रहे हैं',
+      level: 2
     },
     {
       id: 'difficult',
-      label: 'Struggling',
+      label: 'Difficult / कठिन',
       icon: Moon,
-      color: 'mood-difficult',
-      description: 'Having a tough time',
-      tips: ['You\'re not alone in this', 'Consider talking to a counselor', 'Focus on small, manageable steps']
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/20',
+      description: 'Having a tough time right now / अभी कठिन समय से गुजर रहे हैं',
+      level: 1
     }
   ];
 
-  const handleMoodSelect = (moodId: string) => {
-    setSelectedMood(moodId);
-  };
+  const handleSaveMood = async () => {
+    if (!selectedMood) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select your mood first",
+      });
+      return;
+    }
 
-  const handleSubmit = () => {
-    if (selectedMood) {
-      setIsSubmitted(true);
-      // In real app, save to database
-      setTimeout(() => {
-        setIsSubmitted(false);
-        setSelectedMood(null);
-        setNotes("");
-      }, 3000);
+    setLoading(true);
+
+    try {
+      const moodData = {
+        user_id: user?.id,
+        mood_level: moodOptions.find(m => m.id === selectedMood)?.level || 3,
+        mood_type: selectedMood,
+        notes: notes.trim() || null,
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      if (todayEntry) {
+        const { error } = await supabase
+          .from('mood_entries')
+          .update(moodData)
+          .eq('id', todayEntry.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Mood Updated!",
+          description: "Your mood check-in has been updated for today.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('mood_entries')
+          .insert([moodData]);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Mood Saved!",
+          description: "Thank you for checking in today. Keep taking care of yourself!",
+        });
+      }
+
+      onBack();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
     }
   };
-
-  const selectedMoodData = moods.find(m => m.id === selectedMood);
-
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-background p-4 md:p-6 flex items-center justify-center">
-        <Card className="max-w-md mx-auto text-center shadow-card">
-          <CardContent className="p-8">
-            <div className="w-16 h-16 mx-auto mb-4 gradient-primary rounded-full flex items-center justify-center">
-              <TrendingUp className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Thank You!</h2>
-            <p className="text-muted-foreground mb-4">
-              Your mood has been logged. Every check-in helps us understand you better.
-            </p>
-            <Badge variant="secondary" className="gradient-wellness">
-              +10 wellness points earned! 🌟
-            </Badge>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8 fade-in">
-          <Button 
-            variant="ghost" 
-            onClick={onBack}
-            className="mb-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            How are you feeling today? 💙
-          </h1>
-          <p className="text-muted-foreground">
-            आज आपका मन कैसा है? - Take a moment to check in with yourself
-          </p>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">{translate('features.moodTracker')}</h1>
+            <p className="text-muted-foreground">{translate('features.moodTrackerDesc')}</p>
+            {todayEntry && (
+              <div className="flex items-center gap-2 mt-2">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {todayEntry ? 'Updating today\'s entry' : 'Today\'s mood check-in'}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mood Selection */}
-        <Card className="mb-8 shadow-soft slide-in">
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Today's Mood Check-in
-            </CardTitle>
+            <CardTitle>How are you feeling today?</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {moods.map((mood, index) => (
+              {moodOptions.map((mood) => (
                 <Button
                   key={mood.id}
                   variant={selectedMood === mood.id ? "default" : "outline"}
-                  className={`h-32 flex-col gap-3 p-4 slide-in ${
-                    selectedMood === mood.id 
-                      ? 'gradient-primary text-primary-foreground shadow-glow' 
-                      : 'hover:shadow-soft'
-                  }`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                  onClick={() => handleMoodSelect(mood.id)}
+                  className={`h-24 flex-col gap-2 ${selectedMood === mood.id ? 'bg-primary' : ''}`}
+                  onClick={() => setSelectedMood(mood.id)}
                 >
-                  <mood.icon className="w-8 h-8" />
-                  <div className="text-center">
-                    <div className="font-semibold">{mood.label}</div>
-                    <div className="text-xs opacity-75">{mood.description}</div>
-                  </div>
+                  <mood.icon className="w-6 h-6" />
+                  <span className="text-sm font-medium">{mood.label}</span>
                 </Button>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Mood Details & Tips */}
-        {selectedMoodData && (
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="shadow-soft fade-in">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <selectedMoodData.icon className={`w-5 h-5 text-${selectedMoodData.color}`} />
-                  Feeling {selectedMoodData.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  It's completely normal to feel this way. Here are some gentle suggestions:
-                </p>
-                <ul className="space-y-2">
-                  {selectedMoodData.tips.map((tip, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-sm">{tip}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+        {/* Notes */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Optional Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="How was your day? Any thoughts you'd like to share..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+            />
+          </CardContent>
+        </Card>
 
-            <Card className="shadow-soft fade-in">
-              <CardHeader>
-                <CardTitle>Optional Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="What's on your mind? Share anything you'd like to remember about today... (Optional)"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="min-h-32 mb-4"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your notes are private and help you track patterns over time.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Submit Button */}
-        {selectedMood && (
-          <div className="text-center fade-in">
-            <Button 
-              onClick={handleSubmit}
-              size="lg"
-              className="gradient-primary hover:shadow-glow transition-all duration-300 px-12"
-            >
-              Log My Mood
-            </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              Building healthy habits, one check-in at a time 🌱
-            </p>
-          </div>
-        )}
+        {/* Save Button */}
+        <div className="text-center">
+          <Button 
+            onClick={handleSaveMood} 
+            disabled={!selectedMood || loading}
+            className="w-full"
+          >
+            {loading ? "Saving..." : (todayEntry ? "Update Mood" : "Save Mood Check-in")}
+          </Button>
+        </div>
       </div>
     </div>
   );
