@@ -2,41 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+/* YourMannMitra Mental Wellness App Design System
+All colors, gradients, fonts, and animations defined here for consistent, calming UI.
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    /* Calming background and surfaces */
+    --background: 220 20% 98%;
+    --foreground: 215 25% 20%;
+    
+    /* Cards and surfaces with subtle warmth */
+    --card: 210 30% 99%;
+    --card-foreground: 215 25% 20%;
+    
+    /* Popovers and overlays */
+    --popover: 210 30% 99%;
+    --popover-foreground: 215 25% 20%;
+    
+    /* Primary - Calming blue for trust and serenity */
+    --primary: 210 80% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 210 70% 80%;
+    --primary-glow: 210 85% 70%;
+    
+    /* Secondary - Soft sage green for wellness */
+    --secondary: 140 25% 75%;
+    --secondary-foreground: 140 30% 25%;
+    --secondary-light: 140 20% 85%;
+    
+    /* Muted tones for subtle elements */
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 15% 50%;
+    
+    /* Accent - Gentle lavender for highlights */
+    --accent: 260 30% 80%;
+    --accent-foreground: 260 40% 25%;
+    --accent-light: 260 25% 90%;
+    
+    /* Wellness colors */
+    --wellness-calm: 200 50% 85%;
+    --wellness-energy: 45 80% 75%;
+    --wellness-focus: 280 40% 78%;
+    --wellness-peace: 160 35% 80%;
+    
+    /* Mood colors for tracker */
+    --mood-great: 120 60% 70%;
+    --mood-good: 80 70% 75%;
+    --mood-okay: 45 80% 75%;
+    --mood-low: 25 60% 70%;
+    --mood-difficult: 10 50% 65%;
+    
+    /* Functional colors */
+    --destructive: 0 65% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 35 85% 60%;
+    --warning-foreground: 35 30% 15%;
+    --success: 140 50% 55%;
+    --success-foreground: 0 0% 100%;
+    
+    /* Borders and inputs */
+    --border: 210 25% 88%;
+    --input: 210 25% 92%;
+    --ring: 210 80% 65%;
+    
+    /* Gradients for depth and visual interest */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-wellness: linear-gradient(135deg, hsl(var(--wellness-calm)), hsl(var(--wellness-peace)));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted)));
+    --gradient-hero: linear-gradient(180deg, hsl(var(--primary-light) / 0.1), hsl(var(--accent-light) / 0.1));
+    
+    /* Shadows for depth */
+    --shadow-soft: 0 2px 20px -5px hsl(var(--primary) / 0.1);
+    --shadow-card: 0 4px 25px -8px hsl(var(--primary) / 0.15);
+    --shadow-glow: 0 0 30px hsl(var(--primary-glow) / 0.3);
+    
+    /* Animation easing */
+    --ease-gentle: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +146,92 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  /* Custom utility classes for mental wellness app */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-wellness {
+    background: var(--gradient-wellness);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .ease-gentle {
+    transition-timing-function: var(--ease-gentle);
+  }
+  
+  .ease-bounce {
+    transition-timing-function: var(--ease-bounce);
+  }
+  
+  /* Calming animations */
+  .breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+  
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .glow {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3); }
+  100% { box-shadow: 0 0 40px hsl(var(--primary-glow) / 0.5); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@layer components {
+  .fade-in {
+    animation: fadeIn 0.6s var(--ease-gentle) forwards;
+  }
+  
+  .slide-in {
+    animation: slideIn 0.5s var(--ease-gentle) forwards;
   }
 }
